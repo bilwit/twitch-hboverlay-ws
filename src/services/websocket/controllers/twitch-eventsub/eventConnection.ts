@@ -1,6 +1,6 @@
 import { client as WebSocketClient, connection } from 'websocket';
 import EventEmitter from 'events';
-import consoleLogStyling from '../utils/consoleLogStyling';
+import consoleLogStyling from '../../../../utils/consoleLogStyling';
 
 const TWITCH_EVENTSUB_ADDRESS = 'wss://eventsub.wss.twitch.tv/ws';
 const TWITCH_EVENTSUB_SUBSCRIPTION = 'https://api.twitch.tv/helix/eventsub/subscriptions';
