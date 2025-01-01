@@ -1,14 +1,12 @@
 {
   "name": "twitch-healthbar-overlay",
   "version": "1.0.0",
-  "description": "OBS healthbar overlay controlled by Twitch emote/redeem events",
+  "description": "API for OBS healthbar overlay controlled by Twitch emote/redeem events",
   "main": "server.ts",
   "scripts": {
     "build": "npx tsc -b --clean",
     "start": "node dist/server.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/server.js\" \"npm run client\"",
-    "client-install": "npm install --prefix client",
-    "client": "npm start --prefix client"
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/server.js\""
   },
   "keywords": [],
   "author": "",
