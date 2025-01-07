@@ -18,6 +18,7 @@ export default function websocket(server: Server, db: PrismaClient) {
 
       // ********** NO AUTH IMPLEMENTED **********
       // authenticate(request, function next(err: any, isAuthenticated: boolean) {
+      // adds 'userId' field after authentication 
       //   if (err || !isAuthenticated) {
       //     socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       //     socket.destroy();
@@ -44,8 +45,7 @@ export default function websocket(server: Server, db: PrismaClient) {
           const extClient = client as ExtWebSocket;
           extClient.isAlive = true;
           extClient.subscriptions = new Map();
-          extClient.userId = r?.userId;
-          extClient.adAccount = r?.adAccount || '';
+          extClient.userId = 'foo';
           extClient.uid = (new Date()).getTime();
           extClient.on('error', console.error);
           extClient.on('pong', () => extClient.isAlive = true);
