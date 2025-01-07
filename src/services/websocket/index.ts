@@ -13,7 +13,7 @@ export default function websocket(server: Server, db: PrismaClient) {
       noServer: true,
     });
   
-    server.on("upgrade", (_request, socket, _head) => {
+    server.on("upgrade", (request, socket, head) => {
       socket.on('error', onSocketError);
 
       // ********** NO AUTH IMPLEMENTED **********
@@ -26,9 +26,9 @@ export default function websocket(server: Server, db: PrismaClient) {
 
       //   socket.removeListener('error', onSocketError);
 
-      //   ws.handleUpgrade(request, socket, head, function done(client) {
-      //     ws.emit('connection', client, request);
-      //   });
+        ws.handleUpgrade(request, socket, head, function done(client) {
+          ws.emit('connection', client, request);
+        });
       // });
     });
 

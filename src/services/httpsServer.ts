@@ -23,8 +23,8 @@ export default function httpsServer(app: Express) {
 
     return function init() {
       if (server) {
-        server.listen(process.env.SERVER_PORT, () => {
-          console.log(style('important', '🖥️ [Server]: HTTPS started https://localhost:' + process.env.SERVER_PORT));
+        server.listen(process.env.PORT, () => {
+          console.log(style('important', '🖥️ [Server]: HTTPS started https://localhost:' + process.env.PORT));
         });
 
         return server;
