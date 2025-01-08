@@ -50,7 +50,7 @@ export default function websocket(server: Server, db: PrismaClient) {
           extClient.on('error', console.error);
           extClient.on('pong', () => extClient.isAlive = true);
 
-          console.log(style('success', '🔌[Client Connected] ' + r?.userId));
+          console.log(style('success', '🔌[Client Connected] ' + extClient?.userId));
   
           extClient.addEventListener('message', (event: any) => {
             if (event?.data) {

@@ -8,8 +8,8 @@ dotenv.config();
 
 export default function httpsServer(app: Express) {
   const key = readFileSync('/var/opt/certs/privkey.pem', 'utf8');
-  const cert = readFileSync('/var/opt/certs/fullchain.pem', 'utf8');
-  const ca = readFileSync('/var/opt/certs/chain.pem', 'utf8');
+  const cert = readFileSync('/var/opt/certs/cert.pem', 'utf8');
+  const ca = readFileSync('/var/opt/certs/fullchain.pem', 'utf8');
 
   try {
     const server = https.createServer(
