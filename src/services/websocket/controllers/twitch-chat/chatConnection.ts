@@ -23,6 +23,7 @@ export default async function ChatConnection (db: PrismaClient) {
         listener_user_name: true,
         channel_name: true,
         is_connected: true,
+        redirect_uri: true,
       },
     })
     if (settings) {

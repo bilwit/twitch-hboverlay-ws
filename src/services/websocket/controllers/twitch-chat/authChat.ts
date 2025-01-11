@@ -145,7 +145,7 @@ export default async function auth(BroadcasterId: string, settings: Settings, db
           client_secret: settings.listener_secret,
           code: settings.listener_auth_code,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost:' + process.env.PORT,
+          redirect_uri: settings.redirect_uri,
         })
       );
     }

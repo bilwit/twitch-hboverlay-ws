@@ -10,6 +10,7 @@ export interface Settings {
   listener_user_name: string,
   channel_name: string,
   is_connected: boolean,
+  redirect_uri: string,
 }
 
 export async function fetchChatters(tokens: Tokens, user_id: string, listenerClientId: string) {
