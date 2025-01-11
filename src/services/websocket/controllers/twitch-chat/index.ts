@@ -20,7 +20,7 @@ export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSock
 export function updateHandler(_serviceName: string, subscribedClients: SubscribedClients, data: SocketOutgoingUpdate) {
   for (const [_agentId, clientMap] of subscribedClients) {
     for (const [_clientId, client] of clientMap) {
-      const clientChannels = client.subscriptions.get('awsConnect');
+      const clientChannels = client.subscriptions.get('twitch-chat');
 
       // payload might be applicable for multiple channels but we only want to send it one time so we need a counter
       let sendCount = 0;
