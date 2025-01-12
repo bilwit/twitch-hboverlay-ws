@@ -19,6 +19,7 @@ export default function requestMetrics(emitter: EventEmitter, db: PrismaClient) 
 
     if (action === 'stop') {
       emitter.emit('disconnect');
+      isStarted = false;
     }
   };
 };
