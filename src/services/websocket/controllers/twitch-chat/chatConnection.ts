@@ -58,7 +58,6 @@ export default async function ChatConnection (db: PrismaClient) {
             // each new subscription or client may emit 'connect'
             // IRC event listeners should only be instantiated upon the first 'connect', ignoring subsequent ones
             if (!connection) {
-              console.log('new connection')
               connection = await SocketConnection(client);
 
               if (connection) {

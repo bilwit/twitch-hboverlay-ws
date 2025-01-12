@@ -1,19 +1,30 @@
 import { ExtWebSocket } from "../..";
 import { SocketOutgoingUpdate, SubscribedClients } from "../serviceHandler";
 
-export function setCacheHandler(name: string, update: any) {
+export function setCacheHandler(_serviceName: string, update: any) {
+  // cache each unique id update
   const cache = new Map();
-  cache.set(name, update);
+  cache.set(update.id, update);
 
   return cache;
 }
 
 export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSocket) {
-  for (const [_key, value] of cache) {
+  const clientChannels = client.subscriptions.get('twitch-chat');
+
+  const cacheUpdate = cache.get('update');
+
+  for (const [_key, value] of cacheUpdate) {
+    if (clientChannels?.has(value.id)) {
     client.send(JSON.stringify({
       message: 'update',
-      data: value,
+      channels: value.channels,
+      data: {
+        id: value.id,
+        value: value.value,
+      },
     }));
+    }
   }
 }
 
@@ -35,7 +46,10 @@ export function updateHandler(_serviceName: string, subscribedClients: Subscribe
         client.send(JSON.stringify({
           message: 'update',
           channels: data.channels,
-          data: data.data,
+          data: {
+            id: data.id,
+            value: data.value,
+          },
         }));
       }
     }

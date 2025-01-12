@@ -95,5 +95,11 @@ export type SubscribedClients = Map<string, Map<string, ExtWebSocket>>;
 
 export interface SocketOutgoingUpdate {
   channels: string[],
-  data: any,
+  id: number,
+  value: {
+    isDead: boolean,
+    isPaused: boolean,
+    maxHealth: number,
+    value: number,
+  }
 }
