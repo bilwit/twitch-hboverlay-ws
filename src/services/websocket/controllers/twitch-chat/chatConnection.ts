@@ -39,7 +39,9 @@ export default async function ChatConnection (db: PrismaClient) {
 
       if (tokens && tokens?.access_token && tokens?.refresh_token && user_id) {
         return (TwitchEmitter: EventEmitter) => {
+          const client = new WebSocketClient();
           let connection: connection | undefined = undefined;
+          
 
           TwitchEmitter.on('getStatus', () => {
             TwitchEmitter.emit('status', connection ? true : false);
@@ -53,10 +55,11 @@ export default async function ChatConnection (db: PrismaClient) {
           });
 
           TwitchEmitter.on('connect', async () => {
-            const client = new WebSocketClient();
-            connection = await SocketConnection(client);
-            
-            if (connection) {
+            // each new subscription or client may emit 'connect'
+            // IRC event listeners should only be instantiated upon the first 'connect', ignoring subsequent ones
+            if (!connection) {
+              connection = await SocketConnection(client);
+
               // subscribe to Twitch EventSub to listen for channel point redeem events
               EventConnection(TwitchEmitter, tokens.access_token, user_id, settings.listener_client_id);
               
@@ -86,7 +89,7 @@ export default async function ChatConnection (db: PrismaClient) {
                   console.log(consoleLogStyling('warning', `! [IRC]    Code: ${connection.closeReasonCode}`));
                 }
               }); 
-      
+
               try {
                 // initial max health for viewer-scaled hp monster types
                 let MaxHealthScaled = (await fetchChatters(tokens, user_id, settings.listener_client_id));
