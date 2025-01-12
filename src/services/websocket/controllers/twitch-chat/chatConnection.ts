@@ -1,4 +1,4 @@
-import { client as WebSocketClient, connection } from 'websocket';
+import { client as WebSocketClient, connection  as IntConnection} from 'websocket';
 import dotenv from 'dotenv';
 import EventEmitter from 'events';
 import auth, { validate } from './authChat';
@@ -14,6 +14,10 @@ const TWITCH_IRC_ADDRESS = 'wss://irc-ws.chat.twitch.tv:443';
 
 dotenv.config();
 
+// connection declared at topmost scope for persistance
+const client = new WebSocketClient();
+let connection: IntConnection | undefined = undefined;
+
 export default async function ChatConnection (db: PrismaClient) {
   try {
     const settings = await db.settings.findFirst({
@@ -26,7 +30,7 @@ export default async function ChatConnection (db: PrismaClient) {
         is_connected: true,
         redirect_uri: true,
       },
-    })
+    });
 
     if (settings) {
       // authenticate
@@ -38,11 +42,7 @@ export default async function ChatConnection (db: PrismaClient) {
       }
 
       if (tokens && tokens?.access_token && tokens?.refresh_token && user_id) {
-        return (TwitchEmitter: EventEmitter) => {
-          const client = new WebSocketClient();
-          let connection: connection | undefined = undefined;
-          
-
+        return (TwitchEmitter: EventEmitter) => {       
           TwitchEmitter.on('getStatus', () => {
             TwitchEmitter.emit('status', connection ? true : false);
           });
@@ -58,96 +58,100 @@ export default async function ChatConnection (db: PrismaClient) {
             // each new subscription or client may emit 'connect'
             // IRC event listeners should only be instantiated upon the first 'connect', ignoring subsequent ones
             if (!connection) {
+              console.log('new connection')
               connection = await SocketConnection(client);
 
-              // subscribe to Twitch EventSub to listen for channel point redeem events
-              EventConnection(TwitchEmitter, tokens.access_token, user_id, settings.listener_client_id);
-              
-              // authenticate
-              // connection.sendUTF('CAP REQ :twitch.tv/membership'); // track chatters on join/leave -- it doesn't give you the initial list of chatters & massive delay on join/leave
-              connection.sendUTF('PASS oauth:' + tokens.access_token);
+              if (connection) {
+                // subscribe to Twitch EventSub to listen for channel point redeem events
+                // EventConnection(TwitchEmitter, tokens.access_token, user_id, settings.listener_client_id);
+                
+                // authenticate
+                // connection.sendUTF('CAP REQ :twitch.tv/membership'); // track chatters on join/leave -- it doesn't give you the initial list of chatters & massive delay on join/leave
+                connection.sendUTF('PASS oauth:' + tokens.access_token);
 
-              // IRC will disconnect immediately if listener_user_name has spaces!!
-              connection.sendUTF('NICK ' + settings.listener_user_name.replace(/ /g, '-'));   
-      
-              connection.sendUTF('JOIN #' + settings.channel_name);
-      
-              connection.on('error', (error) => {
-                console.log(error);
-                console.log(consoleLogStyling('error', '! [IRC] Connection Error: ' + error.toString()));
-              });
-      
-              connection.on('close', async (_eCode) => {
-                console.log(consoleLogStyling('warning', '! [IRC] Connection Closed'));
-                // if (eCode === 1006) {
-                //   const d = await db.refresh_token.deleteMany();
-                //   console.log(d)
-                // }
-
-                if (connection) {
-                  console.log(consoleLogStyling('warning', `! [IRC]    Description: ${connection.closeDescription}`));
-                  console.log(consoleLogStyling('warning', `! [IRC]    Code: ${connection.closeReasonCode}`));
-                }
-              }); 
-
-              try {
-                // initial max health for viewer-scaled hp monster types
-                let MaxHealthScaled = (await fetchChatters(tokens, user_id, settings.listener_client_id));
-      
-                // update MaxHealthScaled every 15s according to viewer count
-                setInterval(async () => {
-                  try {
-                    const MaxHealthScaledUpdated = (await fetchChatters(tokens, user_id, settings.listener_client_id));
-                    if (MaxHealthScaled !== MaxHealthScaledUpdated) {
-                      MaxHealthScaled = MaxHealthScaledUpdated;
-                      console.log(consoleLogStyling('health', '[IRC] Updated Chatters: ' + MaxHealthScaledUpdated));
-                    }
-                  } catch (e) {
-                    console.log(consoleLogStyling('warning', '! [IRC]  Could not update Max Health'));
-                  }
-                }, 15000);
-      
-                const monsters: Map<number, Monster_CB> = await getMonsters(TwitchEmitter, db);
-
-                TwitchEmitter.on('publish', async (data) => {
-                  if (data.status === true) {
-                    const addedMonster: Monster_CB | null = await getMonster(data.id, TwitchEmitter, db);
-                    if (addedMonster) {
-                      monsters.set(Number(data.id), addedMonster) ;
-                      console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Added'));
-                    }
-                  }
-                  if (data.status === false) {
-                    monsters.delete(Number(data.id));
-                    console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Disabled'));
-                  }
-                })
-          
-                connection.on('message', (message) => {
-                  const parsed = parser(message, settings.channel_name);
-      
-                  if (parsed) {
-                    switch (parsed.command.command) {
-                      case 'PING': // keepalive
-                        // console.log(consoleLogStyling('black', '* [IRC] KeepAlive'));
-                        if (connection) {
-                          connection.sendUTF('PONG ' + parsed.parameters);
-                        }
-                        break;
-                      case 'PRIVMSG': // chatter message
-                        if (monsters.size > 0) {
-                          for (let [_key, monster] of monsters) {
-                            updateMonster(parsed.parameters, monster.trigger_words, monster, MaxHealthScaled);
-                          }
-                        }
-                        break;
-                      default:
-                        break;
-                    }
-                  }
+                // IRC will disconnect immediately if listener_user_name has spaces!!
+                connection.sendUTF('NICK ' + settings.listener_user_name.replace(/ /g, '-'));   
+        
+                connection.sendUTF('JOIN #' + settings.channel_name);
+        
+                connection.on('error', (error) => {
+                  console.log(error);
+                  console.log(consoleLogStyling('error', '! [IRC] Connection Error: ' + error.toString()));
                 });
-              } catch (e) {
-                console.log(consoleLogStyling('error', '! [IRC] Error: ' + e));
+        
+                connection.on('close', async (_eCode) => {
+                  console.log(consoleLogStyling('warning', '! [IRC] Connection Closed'));
+                  // if (eCode === 1006) {
+                  //   const d = await db.refresh_token.deleteMany();
+                  //   console.log(d)
+                  // }
+
+                  if (connection) {
+                    console.log(consoleLogStyling('warning', `! [IRC]    Description: ${connection.closeDescription}`));
+                    console.log(consoleLogStyling('warning', `! [IRC]    Code: ${connection.closeReasonCode}`));
+                  }
+                }); 
+
+                try {
+                  // initial max health for viewer-scaled hp monster types
+                  let MaxHealthScaled = (await fetchChatters(tokens, user_id, settings.listener_client_id));
+        
+                  // update MaxHealthScaled every 15s according to viewer count
+                  setInterval(async () => {
+                    try {
+                      const MaxHealthScaledUpdated = (await fetchChatters(tokens, user_id, settings.listener_client_id));
+                      if (MaxHealthScaled !== MaxHealthScaledUpdated) {
+                        MaxHealthScaled = MaxHealthScaledUpdated;
+                        console.log(consoleLogStyling('health', '[IRC] Updated Chatters: ' + MaxHealthScaledUpdated));
+                      }
+                    } catch (e) {
+                      console.log(consoleLogStyling('warning', '! [IRC]  Could not update Max Health'));
+                    }
+                  }, 15000);
+        
+                  const monsters: Map<number, Monster_CB> = await getMonsters(TwitchEmitter, db);
+
+                  TwitchEmitter.on('publish', async (data) => {
+                    if (data.status === true) {
+                      const addedMonster: Monster_CB | null = await getMonster(data.id, TwitchEmitter, db);
+                      if (addedMonster) {
+                        monsters.set(Number(data.id), addedMonster) ;
+                        console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Added'));
+                      }
+                    }
+                    if (data.status === false) {
+                      monsters.delete(Number(data.id));
+                      console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Disabled'));
+                    }
+                  })
+            
+                  connection.on('message', (message) => {
+                    const parsed = parser(message, settings.channel_name);
+        
+                    if (parsed) {
+                      switch (parsed.command.command) {
+                        case 'PING': // keepalive
+                          // console.log(consoleLogStyling('black', '* [IRC] KeepAlive'));
+                          if (connection) {
+                            connection.sendUTF('PONG ' + parsed.parameters);
+                          }
+                          break;
+                        case 'PRIVMSG': // chatter message
+                          if (monsters.size > 0) {
+                            for (let [_key, monster] of monsters) {
+                              updateMonster(parsed.parameters, monster.trigger_words, monster, MaxHealthScaled);
+                            }
+                          }
+                          break;
+                        default:
+                          break;
+                      }
+                    }
+                  });
+                } catch (e) {
+                  console.log(consoleLogStyling('error', '! [IRC] Error: ' + e));
+                }
+
               }
 
               // validate every hour as per TOS
@@ -191,7 +195,7 @@ async function updateMonster(parameters: any, trigger_words: string, monster: Mo
   }
 }
 
-function SocketConnection(client: WebSocketClient): Promise<connection> {
+function SocketConnection(client: WebSocketClient): Promise<IntConnection> {
   return new Promise((resolve, _reject) => {
     client.connect(TWITCH_IRC_ADDRESS);
     client.on('connect', (connection) => {
