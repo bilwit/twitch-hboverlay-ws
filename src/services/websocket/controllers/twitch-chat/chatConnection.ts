@@ -27,7 +27,7 @@ export default async function ChatConnection (db: PrismaClient) {
         redirect_uri: true,
       },
     })
-    
+
     if (settings) {
       // authenticate
       const tokens = await auth('', settings, db);
@@ -58,7 +58,7 @@ export default async function ChatConnection (db: PrismaClient) {
             
             if (connection) {
               // subscribe to Twitch EventSub to listen for channel point redeem events
-              // EventConnection(TwitchEmitter, tokens.access_token, user_id, settings.listener_client_id);
+              EventConnection(TwitchEmitter, tokens.access_token, user_id, settings.listener_client_id);
               
               // authenticate
               // connection.sendUTF('CAP REQ :twitch.tv/membership'); // track chatters on join/leave -- it doesn't give you the initial list of chatters & massive delay on join/leave
