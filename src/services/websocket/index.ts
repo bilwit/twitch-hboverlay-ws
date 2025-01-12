@@ -59,7 +59,8 @@ export default function websocket(server: Server, db: PrismaClient) {
                 switch (eventData?.message) {
                   case 'subscribe':
                     if (services.has(eventData?.data)) {
-                      extClient.subscriptions.set(eventData?.data, new Set(eventData?.channels || []));
+                      const subbedChannels = extClient.subscriptions.get(eventData?.data) || [];
+                      extClient.subscriptions.set(eventData?.data, new Set(...subbedChannels, ...eventData?.channels));
                       services.get(eventData?.data)(extClient, true, eventData?.data);
                     }
                     break;
