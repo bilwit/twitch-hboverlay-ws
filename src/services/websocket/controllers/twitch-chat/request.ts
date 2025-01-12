@@ -6,7 +6,7 @@ export default function requestMetrics(emitter: EventEmitter, db: PrismaClient) 
   return async (action: string) => {
     let isStarted = false;
 
-    if (!isStarted && action === 'start') { console.log('here')
+    if (!isStarted && action === 'start') {
       // connect to twitch-chat ws
       const connect = await ChatConnection(db);
 

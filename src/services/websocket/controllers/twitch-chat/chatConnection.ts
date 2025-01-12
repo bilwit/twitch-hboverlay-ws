@@ -10,6 +10,7 @@ import { fetchChatters } from './fetchChatters';
 import EventConnection from '../twitch-eventsub/eventConnection';
 
 const TWITCH_IRC_ADDRESS = 'wss://irc-ws.chat.twitch.tv:443';
+// const TWITCH_IRC_ADDRESS = 'ws://irc-ws.chat.twitch.tv:80';
 
 dotenv.config();
 
@@ -51,7 +52,6 @@ export default async function ChatConnection (db: PrismaClient) {
           });
 
           TwitchEmitter.on('connect', async () => {
-            console.log('here')
             const client = new WebSocketClient();
             connection = await SocketConnection(client);
             
@@ -67,15 +67,16 @@ export default async function ChatConnection (db: PrismaClient) {
               connection.sendUTF('JOIN #' + settings.channel_name);
       
               connection.on('error', (error) => {
+                console.log(error);
                 console.log(consoleLogStyling('error', '! [IRC] Connection Error: ' + error.toString()));
               });
       
-              connection.on('close', async (eCode) => {
+              connection.on('close', async (_eCode) => {
                 console.log(consoleLogStyling('warning', '! [IRC] Connection Closed'));
-                if (eCode === 1006) {
-                  const d = await db.refresh_token.deleteMany();
-                  console.log(d)
-                }
+                // if (eCode === 1006) {
+                //   const d = await db.refresh_token.deleteMany();
+                //   console.log(d)
+                // }
 
                 if (connection) {
                   console.log(consoleLogStyling('warning', `! [IRC]    Description: ${connection.closeDescription}`));
