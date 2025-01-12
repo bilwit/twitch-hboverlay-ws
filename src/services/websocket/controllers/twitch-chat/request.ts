@@ -19,6 +19,9 @@ export default function requestMetrics(emitter: EventEmitter, db: PrismaClient) 
       case 'stop':
         emitter.emit('disconnect');
         break;
+      case 'connection-status':
+        emitter.emit('connection-status');
+        break;
       case 'reset':
       case 'pause':
       case 'unpause':

@@ -42,7 +42,14 @@ export default async function ChatConnection(db: PrismaClient) {
       }
 
       if (tokens && tokens?.access_token && tokens?.refresh_token && user_id) {
-        return (TwitchEmitter: EventEmitter) => {       
+        return (TwitchEmitter: EventEmitter) => {  
+          TwitchEmitter.on('connection-status', () => {
+            TwitchEmitter.emit('update', {
+              channels: ['connection-status'],
+              isConnected: connection !== undefined,
+            });
+          });
+
           TwitchEmitter.on('disconnect', () => {
             if (connection) {
               connection.close(1001);

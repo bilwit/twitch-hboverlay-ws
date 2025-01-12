@@ -14,16 +14,18 @@ export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSock
 
   const cacheUpdate = cache.get('update');
 
-  for (const [_key, value] of cacheUpdate) {
-    if (clientChannels?.has(value.id)) {
-      client.send(JSON.stringify({
-        message: 'update',
-        channels: value.channels,
-        data: {
-          id: value.id,
-          value: value.value,
-        },
-      }));
+  if (cacheUpdate && cacheUpdate.size > 0) {
+    for (const [_key, value] of cacheUpdate) {
+      if (clientChannels?.has(value.id)) {
+        client.send(JSON.stringify({
+          message: 'update',
+          channels: value.channels,
+          data: {
+            id: value.id,
+            value: value.value,
+          },
+        }));
+      }
     }
   }
 }
@@ -33,6 +35,7 @@ export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>,
     if (event?.data) {
       try {
         const eventData = JSON.parse(event.data);
+
         switch (eventData?.message) {
           default:
             service(eventData?.message, eventData?.id);
@@ -66,22 +69,36 @@ export function updateHandler(_serviceName: string, subscribedClients: Subscribe
 
       // payload might be applicable for multiple channels but we only want to send it one time so we need a counter
       let sendCount = 0;
+      let isConnectionStatus = false;
 
-      for (const channel of data.channels) {
-        if (clientChannels?.has(channel)) {
-          sendCount++;
+      if (data?.channels && data.channels.length > 0) {
+        for (const channel of data.channels) {
+          if (clientChannels?.has(channel)) {
+            if (channel === 'connection-status') {
+              isConnectionStatus = true;
+            }
+            sendCount++;
+          }
         }
-      }
-
-      if (sendCount > 0) {
-        client.send(JSON.stringify({
-          message: 'update',
-          channels: data.channels,
-          data: {
-            id: data.id,
-            value: data.value,
-          },
-        }));
+  
+        if (sendCount > 0)  {
+          if (isConnectionStatus) {
+            client.send(JSON.stringify({
+              message: 'connection-status',
+              channels: data.channels,
+              data: data.isConnected,
+            }));
+          } else {
+            client.send(JSON.stringify({
+              message: 'update',
+              channels: data.channels,
+              data: {
+                id: data.id,
+                value: data.value,
+              },
+            }));
+          }
+        }
       }
     }
   }
