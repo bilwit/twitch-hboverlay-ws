@@ -5,7 +5,7 @@ import auth, { validate } from './authChat';
 import { PrismaClient } from '@prisma/client';
 import consoleLogStyling from '../../../../utils/consoleLogStyling';
 import parser from './parser';
-import getMonsters, { Monster_CB, getMonster } from '../../../monsters';
+import getMonsters, { Monster_CB, getMonster } from './monsters';
 import { fetchChatters } from './fetchChatters';
 import EventConnection from '../twitch-eventsub/eventConnection';
 

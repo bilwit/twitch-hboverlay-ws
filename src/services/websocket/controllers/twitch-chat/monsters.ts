@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import consoleLogStyling from "../utils/consoleLogStyling";
+import consoleLogStyling from "../../../../utils/consoleLogStyling";
 import { EventEmitter } from "stream";
 
 interface Monster {
@@ -108,6 +108,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
 
     const updateHealth = () => {
       TwitchEmitter.emit('update', {
+        channels: [monster.id],
         id: monster.id,
         value: {
           ...CurrentHealth,
