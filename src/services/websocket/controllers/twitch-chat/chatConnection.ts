@@ -18,7 +18,7 @@ dotenv.config();
 const client = new WebSocketClient();
 let connection: IntConnection | undefined = undefined;
 
-export default async function ChatConnection (db: PrismaClient) {
+export default async function ChatConnection(db: PrismaClient) {
   try {
     const settings = await db.settings.findFirst({
       select: {
@@ -43,10 +43,6 @@ export default async function ChatConnection (db: PrismaClient) {
 
       if (tokens && tokens?.access_token && tokens?.refresh_token && user_id) {
         return (TwitchEmitter: EventEmitter) => {       
-          TwitchEmitter.on('getStatus', () => {
-            TwitchEmitter.emit('status', connection ? true : false);
-          });
-
           TwitchEmitter.on('disconnect', () => {
             if (connection) {
               connection.close(1001);

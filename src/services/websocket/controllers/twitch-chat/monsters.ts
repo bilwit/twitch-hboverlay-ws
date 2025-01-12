@@ -119,7 +119,10 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
     }
 
     TwitchEmitter.on('pause', (data) => {
-      if (monster.relations_id && data?.relations_id === monster.relations_id) {
+      if (
+        (monster.id === data?.id) || 
+        (monster.relations_id && data?.relations_id === monster.relations_id)
+      ) {
         isPaused = true;
         updateHealth();
         console.log(consoleLogStyling('health', '(' + monster.id + ') Paused'));
@@ -127,7 +130,10 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
     });
 
     TwitchEmitter.on('unpause', (data) => {
-      if (monster.relations_id && data?.relations_id === monster.relations_id) {
+      if (
+        (monster.id === data?.id) || 
+        (monster.relations_id && data?.relations_id === monster.relations_id)
+      ) {
         isPaused = false;
         updateHealth();
         console.log(consoleLogStyling('health', '(' + monster.id + ') Unpaused'));
@@ -135,7 +141,10 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
     });
 
     TwitchEmitter.on('reset', (data) => {
-      if ((data?.id && data.id === monster.id) || (data?.relations_id && data.relations_id === monster.relations_id)) {
+      if (
+        (data?.id && data.id === monster.id) || 
+        (data?.relations_id && data.relations_id === monster.relations_id)
+      ) {
         switch (monster.hp_style) {
           case 'Growing':
             CurrentHealth.value = 0;

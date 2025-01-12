@@ -15,6 +15,7 @@ export default function serviceHandler(
   onSubscriptionSendCache?: (cache: Map<any, any>, client: ExtWebSocket) => void,
   cronService?: CronService,
   onStart?: any,
+  customEventListeners?: (client: ExtWebSocket, cache: Map<any, any>, service: any) => void,
 ) {
   const subscribedClients: SubscribedClients = new Map();
   const emitter = new EventEmitter(); // instantiate an emitter
@@ -67,6 +68,10 @@ export default function serviceHandler(
 
       // send cached update to new subscriber on subscription
       onSubscriptionSendCache && onSubscriptionSendCache(cache, client);
+
+      // custom eventListeners for client upstream messages
+      customEventListeners && customEventListeners(client, cache, service);
+
     } else {
       if (userClients.has(client.uid)) {
         userClients.delete(client.uid);

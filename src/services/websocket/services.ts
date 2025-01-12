@@ -1,7 +1,8 @@
 import { 
   setCacheHandler as setCacheTwitchChat, 
   onSubscriptionSendCache as onSubscriptionTwitchChat, 
-  updateHandler as updateHandlerTwitchChat 
+  updateHandler as updateHandlerTwitchChat, 
+  customEventListeners as customEventListenersTwitchChat,
 } from './controllers/twitch-chat';
 import requestTwitchChat from "./controllers/twitch-chat/request";
 import serviceHandler from './controllers/serviceHandler';
@@ -21,6 +22,9 @@ export default function services(db: PrismaClient) {
       false,
       setCacheTwitchChat,
       onSubscriptionTwitchChat,
+      undefined,
+      undefined,
+      customEventListenersTwitchChat,
     ),
   );
 

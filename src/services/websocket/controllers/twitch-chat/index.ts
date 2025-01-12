@@ -16,16 +16,47 @@ export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSock
 
   for (const [_key, value] of cacheUpdate) {
     if (clientChannels?.has(value.id)) {
-    client.send(JSON.stringify({
-      message: 'update',
-      channels: value.channels,
-      data: {
-        id: value.id,
-        value: value.value,
-      },
-    }));
+      client.send(JSON.stringify({
+        message: 'update',
+        channels: value.channels,
+        data: {
+          id: value.id,
+          value: value.value,
+        },
+      }));
     }
   }
+}
+
+export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>, service: (action: string, id?: string) => Promise<void>) {
+  client.addEventListener('message', (event: any) => {
+    if (event?.data) {
+      try {
+        const eventData = JSON.parse(event.data);
+        switch (eventData?.message) {
+          default:
+            service(eventData?.message, eventData?.id);
+            break;
+          // send current data of requested id
+          case 'current':
+            const cacheUpdate = cache.get('update');
+            const requestedCurrent = cacheUpdate.get(eventData?.id);
+
+            client.send(JSON.stringify({
+              message: 'update',
+              channels: [eventData?.id],
+              data: {
+                id: requestedCurrent.id,
+                value: requestedCurrent.value,
+              },
+            }));
+            break;            
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  });
 }
 
 export function updateHandler(_serviceName: string, subscribedClients: SubscribedClients, data: SocketOutgoingUpdate) {
