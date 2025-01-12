@@ -62,7 +62,9 @@ export default async function ChatConnection (db: PrismaClient) {
               // authenticate
               // connection.sendUTF('CAP REQ :twitch.tv/membership'); // track chatters on join/leave -- it doesn't give you the initial list of chatters & massive delay on join/leave
               connection.sendUTF('PASS oauth:' + tokens.access_token);
-              connection.sendUTF('NICK ' + settings.listener_user_name);   
+
+              // IRC will disconnect immediately if listener_user_name has spaces!!
+              connection.sendUTF('NICK ' + settings.listener_user_name.replace(/ /g, '-'));   
       
               connection.sendUTF('JOIN #' + settings.channel_name);
       
