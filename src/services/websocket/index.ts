@@ -38,7 +38,7 @@ export default function websocket(server: Server, db: PrismaClient) {
 
     // client handler
     if (ws) {
-      ws.on('connection', (client: WebSocket, req) => {
+      ws.on('connection', (client: WebSocket, _req) => {
         // const r = req as IncomingMessageExt;
 
         try {
@@ -56,12 +56,17 @@ export default function websocket(server: Server, db: PrismaClient) {
             if (event?.data) {
               try {
                 const eventData = JSON.parse(event.data);
+
                 switch (eventData?.message) {
                   case 'subscribe':
                     if (services.has(eventData?.data)) {
-                      const subbedChannels = extClient.subscriptions.get(eventData?.data) || [];
-                      extClient.subscriptions.set(eventData?.data, new Set(...subbedChannels, ...eventData?.channels));
-                      services.get(eventData?.data)(extClient, true, eventData?.data);
+                      const subbedChannels = extClient.subscriptions.get(eventData?.data) || new Set();
+                      const mergedUnique = (new Set([...subbedChannels, ...eventData?.channels]));
+
+                      if (subbedChannels.size !== mergedUnique.size) {
+                        extClient.subscriptions.set(eventData?.data, mergedUnique);
+                        services.get(eventData?.data)(extClient, true, eventData?.data);
+                      }
                     }
                     break;
                   case 'unsubscribe':
