@@ -29,6 +29,7 @@ model stages {
   ref_id     Int
   avatar_url String? @db.VarChar(255)
   hp_value   Int     @default(25)
+  pause_init Boolean @default(false)
   ref        monster @relation(fields: [ref_id], references: [id], onDelete: Cascade)
 }
 
