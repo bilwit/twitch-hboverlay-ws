@@ -4,14 +4,17 @@ import ChatConnection from "./chatConnection";
 
 export default function requestMetrics(emitter: EventEmitter, db: PrismaClient) {
   return async (action: string) => {
-    let connect;
+    let isStarted = false;
 
-    if (action === 'start') {
+    if (!isStarted && action === 'start') { console.log('here')
       // connect to twitch-chat ws
-      connect = await ChatConnection(db);
-      connect?.(emitter);
-      
-      emitter.emit('connect');
+      const connect = await ChatConnection(db);
+
+      if (connect) {
+        connect?.(emitter);
+        emitter.emit('connect');
+        isStarted = true;
+      }
     }
 
     if (action === 'stop') {

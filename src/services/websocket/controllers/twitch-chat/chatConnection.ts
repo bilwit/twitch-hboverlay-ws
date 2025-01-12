@@ -51,6 +51,7 @@ export default async function ChatConnection (db: PrismaClient) {
           });
 
           TwitchEmitter.on('connect', async () => {
+            console.log('here')
             const client = new WebSocketClient();
             connection = await SocketConnection(client);
             

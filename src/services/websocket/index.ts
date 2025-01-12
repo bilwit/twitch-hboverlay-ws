@@ -39,7 +39,7 @@ export default function websocket(server: Server, db: PrismaClient) {
     // client handler
     if (ws) {
       ws.on('connection', (client: WebSocket, req) => {
-        const r = req as IncomingMessageExt;
+        // const r = req as IncomingMessageExt;
 
         try {
           const extClient = client as ExtWebSocket;

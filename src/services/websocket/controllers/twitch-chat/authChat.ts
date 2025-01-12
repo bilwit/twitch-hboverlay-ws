@@ -38,15 +38,15 @@ export default async function auth(BroadcasterId: string, settings: Settings, db
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
-        body: body
+        body: body,
       }
     );
 
     if (response) {
       const ret = await response.json();
-      if (ret?.access_token && ret?.refresh_token) {
+      if (ret?.access_token && ret?.refresh_token) { 
 
         updateRefresh(ret.refresh_token);
 
@@ -61,11 +61,10 @@ export default async function auth(BroadcasterId: string, settings: Settings, db
         }
       } else {
         if (ret) {
-          console.log(ret);
           await db.refresh_token.deleteMany();
         }
 
-        throw new Error('Could not negotiate access tokens');
+        throw new Error('Could not negotiate access tokens' + (ret?.message ? ' (' + ret.message + ')': ''));
       }
 
     } else {

@@ -52,7 +52,11 @@ export default function serviceHandler(
   return function subscribe(client: ExtWebSocket, isSubscribed: boolean, subscription?: string) {
     const userClients = subscribedClients.get(client.userId) || new Map(); // Map of unique user's clients
 
-    if (isSubscribed) {      
+    if (isSubscribed) {
+      // new subscription always triggers a start, start will be ignored if service is already started
+      // this way we can manually start in case there are issues and db settings need to be changed
+      service('start');
+
       userClients.set(client.uid, client); // overwrite the client reference even if it already is stored since its channels might be changed
 
       subscribedClients.set(client.userId, userClients);
