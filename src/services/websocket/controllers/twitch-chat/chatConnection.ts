@@ -9,7 +9,7 @@ import getMonsters, { Monster_CB, getMonster } from '../../../monsters';
 import { fetchChatters } from './fetchChatters';
 import EventConnection from '../twitch-eventsub/eventConnection';
 
-const TWITCH_IRC_ADDRESS = 'ws://irc-ws.chat.twitch.tv:80';
+const TWITCH_IRC_ADDRESS = 'wss://irc-ws.chat.twitch.tv:443';
 
 dotenv.config();
 
