@@ -3,22 +3,16 @@ import { SocketOutgoingUpdate, SubscribedClients } from "../serviceHandler";
 
 export function setCacheHandler(serviceName: string, update: any) {
   if (serviceName === 'update') {
-    const cache = new Map();
-
     // cache each unique id update
     const updateCache = new Map();
     updateCache.set(update.id, update);
 
-    cache.set('update', updateCache);
-
-    return cache;
+    return updateCache;
   }
 
   if (serviceName === 'connection-status') {
     return update;
   }
-
-
 }
 
 export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSocket) {
@@ -58,11 +52,12 @@ export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>,
 
         switch (eventData?.message) {
           default:
-            service(eventData?.message, eventData?.id);
             break;
           // send current data of requested id
           case 'current':
             const cacheUpdate = cache.get('update');
+
+            console.log(cacheUpdate)
             const requestedCurrent = cacheUpdate.get(eventData?.id);
 
             if (requestedCurrent) {
