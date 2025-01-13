@@ -237,6 +237,18 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
               if (!isDead && !isPaused) {
                 if (monster.hp_style === 'Fixed') {
                   CurrentHealth.value = Math.max(0, CurrentHealth.value + amount);
+
+                  if (stages && stages.length > 0) {
+                    for (const stage of stages) {
+                      if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value <= stage.hp_value) {
+                        thresholdPassed.add(stage.hp_value);
+                        TwitchEmitter.emit('pause', {
+                          id: monster.id,
+                          relations_id: monster.relations_id,
+                        });
+                      }
+                    }
+                  }
                 }
     
                 if (monster.hp_style === 'Scaled') {
