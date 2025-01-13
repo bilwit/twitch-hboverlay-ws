@@ -52,6 +52,7 @@ export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>,
 
         switch (eventData?.message) {
           default:
+            service(eventData?.message, eventData?.id);
             break;
           // send current data of requested id
           case 'current':
