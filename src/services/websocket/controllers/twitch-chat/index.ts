@@ -55,9 +55,7 @@ export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>,
             break;
           // send current data of requested id
           case 'current':
-            const cacheUpdate = cache.get('update');
-
-            console.log(cacheUpdate)
+            const cacheUpdate = cache.get('update')
             const requestedCurrent = cacheUpdate.get(eventData?.id);
 
             if (requestedCurrent) {
