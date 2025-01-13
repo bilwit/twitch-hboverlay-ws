@@ -10,6 +10,11 @@ interface Monster {
   relations_id?: number | null,
 }
 
+interface Monster_Stages {
+  hp_value: number,
+  pause_init: boolean,
+}
+
 export interface Monster_CB {
   id: number,
   trigger_words: string,
@@ -36,7 +41,17 @@ export default async function getMonsters(TwitchEmitter: EventEmitter, db: Prism
       const monsterDict = new Map<number, Monster_CB>();
 
       for (const monster of monsters) {
-        monsterDict.set(monster.id, Monster(monster, TwitchEmitter));
+        const stages = await db.stages.findMany({
+          select: {
+            hp_value: true,
+            pause_init: true,
+          },
+          where: {
+            ref_id: monster.id,
+          }
+        });
+
+        monsterDict.set(monster.id, Monster(monster, TwitchEmitter, stages));
       }
 
       return monsterDict;
@@ -64,8 +79,18 @@ export async function getMonster(id: number, TwitchEmitter: EventEmitter, db: Pr
       }
     });
 
+    const stages = await db.stages.findMany({
+      select: {
+        hp_value: true,
+        pause_init: true,
+      },
+      where: {
+        ref_id: id,
+      }
+    });
+
     if (monster) {
-      return Monster(monster, TwitchEmitter);
+      return Monster(monster, TwitchEmitter, stages);
     } else {
       throw 'Monster ID not found';
     }
@@ -75,13 +100,21 @@ export async function getMonster(id: number, TwitchEmitter: EventEmitter, db: Pr
   }
 }
 
-function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
+function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_Stages[]): any {
   try {
     let isPaused = false;
     let isDead = false;
 
+    let CurrentHealth = {
+      maxHealth: maxHealth(),
+      value: currentHealth(),
+    };
+
+    // keep a dictionary of thresholds met for hp stages
+    const thresholdPassed = new Set();
+
     // initialize health
-    const maxHealth = () => {
+    function maxHealth () {
       switch (monster.hp_style) {
         default:
         case 'Fixed':
@@ -90,7 +123,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
           return monster.hp_multiplier;
       }
     }
-    const currentHealth = () => {
+    function currentHealth() {
       switch (monster.hp_style) {
         case 'Growing':
           return 0;
@@ -101,12 +134,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
       }
     }
 
-    let CurrentHealth = {
-      maxHealth: maxHealth(),
-      value: currentHealth(),
-    };
-
-    const updateHealth = () => {
+    function updateHealth() {
       TwitchEmitter.emit('update', {
         channels: [monster.id],
         id: monster.id,
@@ -157,6 +185,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
         }
         isDead = false;
         updateHealth();
+        thresholdPassed.clear();
         console.log(consoleLogStyling('health', '(' + monster.id + ') Health Reset: ' + CurrentHealth.value));
       }
     });
@@ -187,6 +216,16 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
                     relations_id: monster.relations_id,
                   });
                 }
+
+                if (stages && stages.length > 0) {
+                  for (const stage of stages) {
+                    if (stage.pause_init && CurrentHealth.value >= stage.hp_value) {
+                      TwitchEmitter.emit('pause', {
+                        relations_id: monster.relations_id,
+                      });
+                    }
+                  }
+                }
               }
             }
             break;
@@ -209,11 +248,26 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter): any {
                   } else {
                     CurrentHealth.value += amount;
                   }
+
+                  if (stages && stages.length > 0) {
+                    for (const stage of stages) {
+                      const scaledThreshold = updatedMaxHealth * (stage.hp_value / 100);
+
+                      if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value <= scaledThreshold) {
+                        thresholdPassed.add(stage.hp_value);
+                        TwitchEmitter.emit('pause', {
+                          id: monster.id,
+                          relations_id: monster.relations_id,
+                        });
+                      }
+                    }
+                  }
                 }
 
                 if (CurrentHealth.value <= 0) {
                   isDead = true;
                   TwitchEmitter.emit('pause', {
+                    id: monster.id,
                     relations_id: monster.relations_id,
                   });
                 }
