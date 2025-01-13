@@ -213,14 +213,17 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
                 if (CurrentHealth.value >= monster.hp_multiplier) {
                   isDead = true;
                   TwitchEmitter.emit('pause', {
+                    id: monster.id,
                     relations_id: monster.relations_id,
                   });
                 }
 
                 if (stages && stages.length > 0) {
                   for (const stage of stages) {
-                    if (stage.pause_init && CurrentHealth.value >= stage.hp_value) {
+                    if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value >= stage.hp_value) {
+                      thresholdPassed.add(stage.hp_value);
                       TwitchEmitter.emit('pause', {
+                        id: monster.id,
                         relations_id: monster.relations_id,
                       });
                     }
