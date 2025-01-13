@@ -1,19 +1,30 @@
 import { ExtWebSocket } from "../..";
 import { SocketOutgoingUpdate, SubscribedClients } from "../serviceHandler";
 
-export function setCacheHandler(_serviceName: string, update: any) {
-  // cache each unique id update
-  const cache = new Map();
-  cache.set(update.id, update);
+export function setCacheHandler(serviceName: string, update: any) {
+  if (serviceName === 'update') {
+    const cache = new Map();
 
-  return cache;
+    // cache each unique id update
+    const updateCache = new Map();
+    updateCache.set(update.id, update);
+
+    cache.set('update', updateCache);
+
+    return cache;
+  }
+
+  if (serviceName === 'connection-status') {
+    return update;
+  }
+
+
 }
 
 export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSocket) {
   const clientChannels = client.subscriptions.get('twitch-chat');
 
   const cacheUpdate = cache.get('update');
-
   if (cacheUpdate && cacheUpdate.size > 0) {
     for (const [_key, value] of cacheUpdate) {
       if (clientChannels?.has(value.id)) {
@@ -27,6 +38,15 @@ export function onSubscriptionSendCache(cache: Map<any, any>, client: ExtWebSock
         }));
       }
     }
+  }
+
+  const cacheConnection = cache.get('connection-status');
+  if (cacheConnection) {
+    client.send(JSON.stringify({
+      message: 'connection-status',
+      channels: cacheConnection.channels,
+      data: cacheConnection.isConnected,
+    }));
   }
 }
 
@@ -45,14 +65,16 @@ export function customEventListeners(client: ExtWebSocket, cache: Map<any, any>,
             const cacheUpdate = cache.get('update');
             const requestedCurrent = cacheUpdate.get(eventData?.id);
 
-            client.send(JSON.stringify({
-              message: 'update',
-              channels: [eventData?.id],
-              data: {
-                id: requestedCurrent.id,
-                value: requestedCurrent.value,
-              },
-            }));
+            if (requestedCurrent) {
+              client.send(JSON.stringify({
+                message: 'update',
+                channels: [eventData?.id],
+                data: {
+                  id: requestedCurrent?.id,
+                  value: requestedCurrent?.value,
+                },
+              })); 
+            }
             break;            
         }
       } catch (e) {

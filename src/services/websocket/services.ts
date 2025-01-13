@@ -16,7 +16,7 @@ export default function services(db: PrismaClient) {
     serviceHandler(
       db,
       requestTwitchChat, 
-      ['update'], 
+      ['update', 'connection-status'], 
       updateHandlerTwitchChat,
       true,
       false,
