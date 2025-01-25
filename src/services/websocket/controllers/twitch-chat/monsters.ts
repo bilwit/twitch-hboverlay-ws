@@ -13,6 +13,7 @@ interface Monster {
 interface Monster_Stages {
   hp_value: number,
   pause_init: boolean,
+  trigger_words: string,
 }
 
 export interface Monster_CB {
@@ -45,6 +46,7 @@ export default async function getMonsters(TwitchEmitter: EventEmitter, db: Prism
           select: {
             hp_value: true,
             pause_init: true,
+            trigger_words: true,
           },
           where: {
             ref_id: monster.id,
@@ -83,6 +85,7 @@ export async function getMonster(id: number, TwitchEmitter: EventEmitter, db: Pr
       select: {
         hp_value: true,
         pause_init: true,
+        trigger_words: true,
       },
       where: {
         ref_id: id,
@@ -111,7 +114,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
     };
 
     // keep a dictionary of thresholds met for hp stages
-    const thresholdPassed = new Set();
+    const thresholdPassed = new Map();
 
     // initialize health
     function maxHealth () {
@@ -203,6 +206,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
     return {
       id: monster.id,
       trigger_words: monster.trigger_words,
+      thresholdPassed: thresholdPassed,
       update: function(amount: number, updatedChatterAmount: number) {
         switch (monster.hp_style) {
           case 'Growing':
@@ -220,12 +224,15 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
 
                 if (stages && stages.length > 0) {
                   for (const stage of stages) {
-                    if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value >= stage.hp_value) {
-                      thresholdPassed.add(stage.hp_value);
-                      TwitchEmitter.emit('pause', {
-                        id: monster.id,
-                        relations_id: monster.relations_id,
-                      });
+                    if (!thresholdPassed.has(stage.hp_value) && CurrentHealth.value >= stage.hp_value) {
+                      thresholdPassed.set(stage.hp_value, stage?.trigger_words || '');
+
+                      if (stage.pause_init) {
+                        TwitchEmitter.emit('pause', {
+                          id: monster.id,
+                          relations_id: monster.relations_id,
+                        });
+                      }
                     }
                   }
                 }
@@ -243,12 +250,15 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
 
                   if (stages && stages.length > 0) {
                     for (const stage of stages) {
-                      if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value <= stage.hp_value) {
-                        thresholdPassed.add(stage.hp_value);
-                        TwitchEmitter.emit('pause', {
-                          id: monster.id,
-                          relations_id: monster.relations_id,
-                        });
+                      if (!thresholdPassed.has(stage.hp_value) && CurrentHealth.value <= stage.hp_value) {
+                        thresholdPassed.set(stage.hp_value, stage?.trigger_words || '');
+
+                        if (stage.pause_init) {
+                          TwitchEmitter.emit('pause', {
+                            id: monster.id,
+                            relations_id: monster.relations_id,
+                          });
+                        }
                       }
                     }
                   }
@@ -268,12 +278,15 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
                     for (const stage of stages) {
                       const scaledThreshold = updatedMaxHealth * (stage.hp_value / 100);
 
-                      if (!thresholdPassed.has(stage.hp_value) && stage.pause_init && CurrentHealth.value <= scaledThreshold) {
-                        thresholdPassed.add(stage.hp_value);
-                        TwitchEmitter.emit('pause', {
-                          id: monster.id,
-                          relations_id: monster.relations_id,
-                        });
+                      if (!thresholdPassed.has(stage.hp_value) && CurrentHealth.value <= scaledThreshold) {
+                        thresholdPassed.set(stage.hp_value, stage?.trigger_words || '');
+
+                        if (stage.pause_init) {
+                          TwitchEmitter.emit('pause', {
+                            id: monster.id,
+                            relations_id: monster.relations_id,
+                          });
+                        }
                       }
                     }
                   }

@@ -111,7 +111,7 @@ export default async function ChatConnection(db: PrismaClient) {
                     }
                   }, 15000);
         
-                  const monsters: Map<number, Monster_CB> = await getMonsters(TwitchEmitter, db);
+                  const monsters: Map<number, any> = await getMonsters(TwitchEmitter, db);
 
                   TwitchEmitter.on('publish', async (data) => {
                     if (data.status === true) {
@@ -129,7 +129,8 @@ export default async function ChatConnection(db: PrismaClient) {
             
                   connection.on('message', (message) => {
                     const parsed = parser(message, settings.channel_name);
-        
+                    let thresholdCount = 0;
+
                     if (parsed) {
                       switch (parsed.command.command) {
                         case 'PING': // keepalive
@@ -141,6 +142,13 @@ export default async function ChatConnection(db: PrismaClient) {
                         case 'PRIVMSG': // chatter message
                           if (monsters.size > 0) {
                             for (let [_key, monster] of monsters) {
+                              if (monster?.thresholdPassed && monster.thresholdPassed.size >= thresholdCount) {
+                                for (const [_key, value] of monster.thresholdPassed) {
+                                  monster.trigger_words = value;
+                                  thresholdCount++;
+                                  break;
+                                }
+                              }
                               updateMonster(parsed.parameters, monster.trigger_words, monster, MaxHealthScaled);
                             }
                           }
