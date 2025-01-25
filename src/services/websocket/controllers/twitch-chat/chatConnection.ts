@@ -125,7 +125,7 @@ export default async function ChatConnection(db: PrismaClient) {
                       monsters.delete(Number(data.id));
                       console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Disabled'));
                     }
-                  })
+                  });
             
                   connection.on('message', (message) => {
                     const parsed = parser(message, settings.channel_name);
