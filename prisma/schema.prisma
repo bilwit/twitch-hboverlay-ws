@@ -25,12 +25,14 @@ model monster {
 }
 
 model stages {
-  id         Int     @id @default(autoincrement())
-  ref_id     Int
-  avatar_url String? @db.VarChar(255)
-  hp_value   Int     @default(25)
-  pause_init Boolean @default(false)
-  ref        monster @relation(fields: [ref_id], references: [id], onDelete: Cascade)
+  id                Int                 @id @default(autoincrement())
+  ref_id            Int
+  avatar_url        String?             @db.VarChar(255)
+  hp_value          Int                 @default(25)
+  pause_init        Boolean             @default(false)
+  trigger_words     String              @db.VarChar(255)
+  ref               monster             @relation(fields: [ref_id], references: [id], onDelete: Cascade)
+  stages_on_redeems stages_on_redeems[]
 }
 
 model relations {
@@ -39,11 +41,12 @@ model relations {
 }
 
 model redeems {
-  id            Int                   @id @default(autoincrement())
-  title         String                @unique @db.VarChar(255)
-  default_image String                @db.VarChar(255)
-  twitch_id     String                @unique @db.VarChar(255)
-  monsters      monsters_on_redeems[]
+  id                Int                   @id @default(autoincrement())
+  title             String                @unique @db.VarChar(255)
+  default_image     String                @db.VarChar(255)
+  twitch_id         String                @unique @db.VarChar(255)
+  monsters          monsters_on_redeems[]
+  stages_on_redeems stages_on_redeems[]
 }
 
 model monsters_on_redeems {
@@ -71,4 +74,13 @@ model refresh_token {
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
   value      String   @db.VarChar(255)
+}
+
+model stages_on_redeems {
+  stages_id  Int
+  redeems_id Int
+  redeems    redeems @relation(fields: [redeems_id], references: [id])
+  stages     stages  @relation(fields: [stages_id], references: [id])
+
+  @@id([stages_id, redeems_id])
 }
