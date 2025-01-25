@@ -126,6 +126,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
           return monster.hp_multiplier;
       }
     }
+
     function currentHealth() {
       switch (monster.hp_style) {
         case 'Growing':
@@ -205,8 +206,10 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
 
     return {
       id: monster.id,
+      initialTriggerWords: monster.trigger_words,
       trigger_words: monster.trigger_words,
       thresholdPassed: thresholdPassed,
+      currentHealth: () => CurrentHealth,
       update: function(amount: number, updatedChatterAmount: number) {
         switch (monster.hp_style) {
           case 'Growing':
