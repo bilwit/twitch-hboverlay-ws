@@ -129,7 +129,7 @@ export default async function ChatConnection(db: PrismaClient) {
             
                   connection.on('message', (message) => {
                     const parsed = parser(message, settings.channel_name);
-                    let thresholdCount = 0;
+                    const monsterThresholdDict = new Map();
 
                     if (parsed) {
                       switch (parsed.command.command) {
@@ -141,12 +141,28 @@ export default async function ChatConnection(db: PrismaClient) {
                           break;
                         case 'PRIVMSG': // chatter message
                           if (monsters.size > 0) {
-                            for (let [_key, monster] of monsters) {
-                              if (monster?.thresholdPassed && monster.thresholdPassed.size >= thresholdCount) {
-                                for (const [_key, value] of monster.thresholdPassed) {
-                                  monster.trigger_words = value;
-                                  thresholdCount++;
-                                  break;
+                            for (let [key, monster] of monsters) {
+                              if (!monsterThresholdDict.has(key)) {
+                                monsterThresholdDict.set(key, {
+                                  thresholdCount: 0,
+                                  currentPercentageThreshold: 100,
+                                });
+                              }
+
+                              const currentMonsterThreshold = monsterThresholdDict.get(key);
+
+                              if (monster?.thresholdPassed && monster.thresholdPassed.size !== currentMonsterThreshold.thresholdCount) {
+                                for (const [percentage, value] of monster.thresholdPassed) {
+                                  if (currentMonsterThreshold.currentPercentageThreshold !== percentage && percentage < currentMonsterThreshold.currentPercentageThreshold) {
+                                    monster.thresholdPassed.delete(currentMonsterThreshold.currentPercentageThreshold);
+
+                                    monsterThresholdDict.set(key, {
+                                      thresholdCount: currentMonsterThreshold.thresholdCount++,
+                                      currentPercentageThreshold: percentage,
+                                    });
+
+                                    monster.trigger_words = value || monster.initialTriggerWords;
+                                  }
                                 }
                               }
                               updateMonster(parsed.parameters, monster.trigger_words, monster, MaxHealthScaled);
