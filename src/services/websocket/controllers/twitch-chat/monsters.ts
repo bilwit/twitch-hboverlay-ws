@@ -208,6 +208,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
       id: monster.id,
       initialTriggerWords: monster.trigger_words,
       trigger_words: monster.trigger_words,
+      stages: stages,
       thresholdPassed: thresholdPassed,
       currentHealth: () => CurrentHealth,
       update: function(amount: number, updatedChatterAmount: number) {
@@ -227,7 +228,7 @@ function Monster(monster: Monster, TwitchEmitter: EventEmitter, stages: Monster_
 
                 if (stages && stages.length > 0) {
                   for (const stage of stages) {
-                    if (!thresholdPassed.has(stage.hp_value) && CurrentHealth.value >= stage.hp_value) {
+                    if (!thresholdPassed.has(stage.hp_value) && (CurrentHealth.value / CurrentHealth.maxHealth * 100) >= stage.hp_value) {
                       thresholdPassed.set(stage.hp_value, stage?.trigger_words || '');
 
                       if (stage.pause_init) {

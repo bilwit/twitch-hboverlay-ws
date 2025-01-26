@@ -126,10 +126,12 @@ export default async function ChatConnection(db: PrismaClient) {
                       console.log(consoleLogStyling('health', '[IRC] (' + data.id + ')' + ' Monster Disabled'));
                     }
                   });
+
+                  // persistent dictionary to track current threshold per monster
+                  const monsterThresholdDict = new Map();
             
                   connection.on('message', (message) => {
                     const parsed = parser(message, settings.channel_name);
-                    const monsterThresholdDict = new Map();
 
                     if (parsed) {
                       switch (parsed.command.command) {
@@ -141,30 +143,25 @@ export default async function ChatConnection(db: PrismaClient) {
                           break;
                         case 'PRIVMSG': // chatter message
                           if (monsters.size > 0) {
+                            
                             for (let [key, monster] of monsters) {
                               if (!monsterThresholdDict.has(key)) {
-                                monsterThresholdDict.set(key, {
-                                  thresholdCount: 0,
-                                  currentPercentageThreshold: 100,
-                                });
+                                monsterThresholdDict.set(key, 0);
                               }
 
-                              const currentMonsterThreshold = monsterThresholdDict.get(key);
+                              if (monster?.stages && monster.stages.length > 0) {
+                                const currentHealth = monster.currentHealth();
+                                const currentHP = currentHealth.value / currentHealth.maxHealth * 100;
 
-                              if (monster?.thresholdPassed && monster.thresholdPassed.size !== currentMonsterThreshold.thresholdCount) {
-                                for (const [percentage, value] of monster.thresholdPassed) {
-                                  if (currentMonsterThreshold.currentPercentageThreshold !== percentage && percentage < currentMonsterThreshold.currentPercentageThreshold) {
-                                    monster.thresholdPassed.delete(currentMonsterThreshold.currentPercentageThreshold);
-
-                                    monsterThresholdDict.set(key, {
-                                      thresholdCount: currentMonsterThreshold.thresholdCount++,
-                                      currentPercentageThreshold: percentage,
-                                    });
-
-                                    monster.trigger_words = value || monster.initialTriggerWords;
+                                for (let i = monsterThresholdDict.get(key); i <= monster.stages.length; i++) {
+                                  if (monster?.stages?.[i] && currentHP <= monster.stages[i].hp_value) {
+                                    monsterThresholdDict.set(key, i+1);
+                                    monster.trigger_words = monster.stages[i].trigger_words || monster.initialTriggerWords;
+                                    break;
                                   }
                                 }
                               }
+
                               updateMonster(parsed.parameters, monster.trigger_words, monster, MaxHealthScaled);
                             }
                           }
@@ -238,6 +235,7 @@ function checkTriggerWords (message: string, triggerWords: string): number {
 
   for (const trigger of triggers) {
     const triggerFound = message.split(trigger).length-1;
+
     if (triggerFound > 0) {
       triggerCount += triggerFound;
     }
